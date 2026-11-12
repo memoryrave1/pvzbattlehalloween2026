@@ -1,0 +1,1057 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>ttlrt</title>
+    <style>
+      :root {
+        --hero-health: #b990ca;
+        --enemy-health: #ff8c00;
+        --health-background: #8b696e;
+        --panel-background: rgba(255, 255, 255, 0.92);
+        --character-size: clamp(145px, 21vw, 330px);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+      }
+      body {
+        color: #17131a;
+        font-family: Georgia, "Times New Roman", serif;
+        background: #2f3d42;
+      }
+      button,
+      input {
+        font: inherit;
+      }
+      button {
+        cursor: pointer;
+      }
+
+      .screen {
+        width: 100%;
+        height: 100vh;
+        height: 100svh;
+        overflow: hidden;
+        background-image:
+          linear-gradient(rgba(12, 18, 23, 0.08), rgba(12, 18, 23, 0.08)),
+          url("https://i.postimg.cc/cJ93p2Lv/b1c0618de3943c2f786aac1d31c8a54f-a5017a53-6a43-4561-97ba-6.jpg");
+        background-position: center;
+        background-size: cover;
+        background-repeat: no-repeat;
+      }
+
+      .start-screen {
+        display: grid;
+        place-items: center;
+        padding: 20px;
+      }
+      .start-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: clamp(24px, 5vh, 42px);
+      }
+      .start-title {
+        margin: 0;
+        color: #fff;
+        font-size: clamp(20px, 9vw, 110px);
+        line-height: 0.95;
+        letter-spacing: 0.03em;
+        text-shadow:
+          4px 5px 0 rgba(0, 0, 0, 0.68),
+          0 0 24px rgba(0, 0, 0, 0.45);
+      }
+      .start-button,
+      .restart-button {
+        min-width: 180px;
+        padding: 13px 34px;
+        border: 3px solid #19151b;
+        border-radius: 16px;
+        color: #fff;
+        background: linear-gradient(#a9c36c, #6e8d3e);
+        box-shadow:
+          0 5px 0 #364923,
+          0 9px 18px rgba(0, 0, 0, 0.35);
+        font-size: clamp(21px, 3.5vw, 32px);
+        font-weight: 700;
+        letter-spacing: 0.04em;
+      }
+      .start-button:hover,
+      .restart-button:hover {
+        filter: brightness(1.1);
+      }
+      .start-button:active,
+      .restart-button:active {
+        transform: translateY(3px);
+        box-shadow:
+          0 2px 0 #364923,
+          0 5px 12px rgba(0, 0, 0, 0.35);
+      }
+
+      .game-screen {
+        display: none;
+        padding: clamp(7px, 1.3vw, 20px);
+      }
+      .game-screen.active {
+        display: block;
+      }
+
+      .game-layout {
+        width: min(1500px, 100%);
+        height: 100%;
+        min-height: 0;
+        margin: auto;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr) auto;
+        gap: 0;
+        align-items: stretch;
+        justify-items: center;
+      }
+
+      .game-layout.layout-center .battle-area,
+      .game-layout.layout-top .battle-area {
+        grid-row: 1;
+      }
+      .game-layout.layout-center .question-area,
+      .game-layout.layout-top .question-area {
+        grid-row: 2;
+      }
+
+      .game-layout.layout-bottom {
+        grid-template-rows: auto minmax(0, 1fr);
+      }
+      .game-layout.layout-bottom .question-area {
+        grid-row: 1;
+      }
+      .game-layout.layout-bottom .battle-area {
+        grid-row: 2;
+      }
+
+      .battle-area,
+      .question-area {
+        width: 100%;
+        min-width: 0;
+        min-height: 0;
+      }
+      .battle-area {
+        height: 100%;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        align-items: stretch;
+        gap: 0;
+      }
+
+      .health-row {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: clamp(18px, 4vw, 75px);
+        padding: 0 clamp(4px, 1vw, 18px);
+      }
+      .health-card {
+        width: min(32%, 620px);
+      }
+      .health-label {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 5px;
+        color: #fff;
+        font-family: Arial, sans-serif;
+        font-size: clamp(10px, 1.2vw, 17px);
+        font-weight: 800;
+        text-shadow: 2px 2px 3px #000;
+        text-transform: uppercase;
+      }
+      .health-frame {
+        position: relative;
+        height: clamp(38px, 5vh, 54px);
+        padding: 6px;
+        overflow: hidden;
+        border: 3px solid #17131a;
+        border-radius: 27px;
+        background: var(--health-background);
+        box-shadow:
+          inset 0 0 0 2px rgba(214, 174, 174, 0.68),
+          inset 0 0 0 5px #382329,
+          0 4px 0 rgba(15, 12, 17, 0.65),
+          0 6px 13px rgba(0, 0, 0, 0.42);
+      }
+      .health-fill {
+        width: 100%;
+        height: 100%;
+        border-radius: 20px;
+        transition: width 0.55s ease;
+        box-shadow:
+          inset 0 2px 2px rgba(255, 255, 255, 0.6),
+          inset 0 -3px 4px rgba(70, 25, 70, 0.3);
+      }
+      .hero-health-fill {
+        background: linear-gradient(
+          #e0b9ee 0%,
+          var(--hero-health) 48%,
+          #9871a8 100%
+        );
+      }
+      .enemy-health-fill {
+        background: linear-gradient(
+          #ffbd27 0%,
+          var(--enemy-health) 52%,
+          #dd6700 100%
+        );
+      }
+      .health-hit {
+        animation: healthHit 0.7s ease;
+      }
+
+      .characters {
+        position: relative;
+        width: 100%;
+        min-height: 0;
+        height: 100%;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        padding: 0 clamp(2px, 4vw, 65px);
+        overflow: visible;
+      }
+      .character-box {
+        position: relative;
+        width: var(--character-size);
+        max-width: 42%;
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+        transform-origin: center bottom;
+        animation: hoverCharacter 2.4s ease-in-out infinite;
+        z-index: 2;
+      }
+      .character-box > img:first-child {
+        display: block;
+        width: 100%;
+        height: auto;
+        max-height: 39vh;
+        object-fit: contain;
+        object-position: bottom center;
+        filter: drop-shadow(0 10px 9px rgba(0, 0, 0, 0.44));
+        user-select: none;
+        -webkit-user-drag: none;
+      }
+      .character-box.hit > img:first-child {
+        animation: hitFlash 1.7s ease-in-out;
+      }
+      .hero-character {
+        animation-delay: -0.9s;
+      }
+      .enemy-character {
+        animation-delay: -0.2s;
+      }
+      .character-box.attack-spin {
+        animation: spinAttack 1.5s linear;
+      }
+      .character-box.attack-jump {
+        animation: jumpAttack 1.5s cubic-bezier(0.2, 0.8, 0.3, 1);
+      }
+      .character-box.attack-grow {
+        animation: growAttack 1.5s ease-in-out;
+      }
+
+      .attack-projectile {
+        position: absolute;
+        top: 43%;
+        left: var(--projectile-start);
+        width: clamp(75px, 12vw, 190px);
+        aspect-ratio: 1;
+        object-fit: contain;
+        opacity: 0;
+        pointer-events: none;
+        transform: translate(-50%, -50%) scale(0.3);
+        filter: drop-shadow(0 0 7px #fff) drop-shadow(0 0 17px #fff28a)
+          drop-shadow(0 0 32px #ff6a00);
+        z-index: 10;
+      }
+      .attack-projectile.fly {
+        animation: projectileFly 1.5s cubic-bezier(0.12, 0.78, 0.25, 1) forwards;
+      }
+
+      .question-area {
+        display: grid;
+        grid-template-rows: 34px 150px 82px 20px;
+        align-content: end;
+        justify-items: center;
+        gap: 7px;
+        padding-bottom: 0;
+      }
+      .progress {
+        align-self: center;
+        padding: 6px 20px;
+        border-radius: 12px;
+        color: #fff;
+        background: rgba(20, 20, 25, 0.55);
+        font-family: Arial, sans-serif;
+        font-size: clamp(13px, 1.8vw, 22px);
+        font-weight: 800;
+        text-shadow: 2px 2px 3px #000;
+      }
+      .question-card {
+        width: min(900px, 100%);
+        height: 150px;
+        display: flex;
+        align-items: center;
+        gap: clamp(10px, 2vw, 26px);
+        padding: clamp(13px, 2.3vw, 30px);
+        border-radius: 17px;
+        background: var(--panel-background);
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
+      }
+      .question-number {
+        align-self: flex-start;
+        font-size: clamp(30px, 4.5vw, 57px);
+        font-weight: 700;
+        line-height: 1;
+      }
+      .question-text {
+        margin: 0;
+        font-size: clamp(18px, 2.7vw, 36px);
+        line-height: 1.12;
+      }
+      .answer-zone {
+        width: min(900px, 100%);
+        height: 82px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 9px;
+      }
+      .answer-input {
+        flex: 1 1 280px;
+        min-width: 0;
+        height: 65px;
+        padding: 7px 14px;
+        border: 3px solid #17131a;
+        border-radius: 4px;
+        outline: none;
+        color: #151015;
+        background: rgba(255, 255, 255, 0.78);
+        font-size: clamp(19px, 2.7vw, 31px);
+        text-align: center;
+      }
+      .answer-input:focus {
+        border-color: #8aa649;
+        box-shadow: 0 0 0 4px rgba(138, 166, 73, 0.3);
+      }
+      .answer-input.correct-answer,
+      .choice-button.correct-answer {
+        border-color: #75a83b;
+        background: #eaffc7;
+        box-shadow:
+          0 0 0 5px rgba(181, 255, 91, 0.76),
+          0 0 28px 9px rgba(181, 255, 91, 0.62);
+      }
+      .answer-input.wrong-answer,
+      .choice-button.wrong-answer {
+        border-color: #db5142;
+        background: #ffd3cc;
+        box-shadow:
+          0 0 0 5px rgba(255, 100, 80, 0.76),
+          0 0 28px 9px rgba(255, 72, 52, 0.62);
+      }
+      .check-button {
+        min-width: 170px;
+        height: 65px;
+        border: 0;
+        border-radius: 13px;
+        color: #fff;
+        background: linear-gradient(#a4c360, #718e42);
+        box-shadow: 0 4px 0 #4e662d;
+        font-size: clamp(19px, 2.7vw, 29px);
+        font-weight: 800;
+      }
+      .check-button:active {
+        transform: translateY(3px);
+        box-shadow: 0 1px 0 #4e662d;
+      }
+      .choice-list {
+        width: min(900px, 100%);
+        height: 70px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: clamp(7px, 1vw, 12px);
+      }
+      .choice-button {
+        width: 100%;
+        height: 70px;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        padding: 7px 10px;
+        border: 3px solid rgba(255, 255, 255, 0.9);
+        border-radius: 11px;
+        color: #262027;
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        font-size: clamp(17px, 2.4vw, 29px);
+        font-weight: 700;
+        text-align: center;
+      }
+      .choice-button:hover {
+        background: rgba(255, 255, 255, 0.9);
+      }
+      .choice-letter {
+        width: 32px;
+        height: 32px;
+        flex: 0 0 32px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        color: #fff;
+        background: #88a94a;
+        font-family: Arial, sans-serif;
+        font-size: 17px;
+      }
+      .feedback {
+        height: 20px;
+        color: #fff;
+        font-family: Arial, sans-serif;
+        font-size: clamp(14px, 1.8vw, 21px);
+        font-weight: 900;
+        text-align: center;
+        text-shadow: 2px 2px 3px #000;
+      }
+      .feedback.good {
+        color: #e7ffad;
+      }
+      .feedback.bad {
+        color: #ffc5bd;
+      }
+
+      .game-over {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        display: none;
+        place-items: center;
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.65);
+      }
+      .game-over.active {
+        display: grid;
+      }
+      .result-box {
+        width: min(540px, 100%);
+        padding: clamp(24px, 5vw, 52px);
+        border: 4px solid #17131a;
+        border-radius: 23px;
+        background: rgba(255, 255, 255, 0.96);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+        text-align: center;
+      }
+      .result-title {
+        margin: 0 0 14px;
+        font-size: clamp(30px, 6vw, 56px);
+      }
+      .result-text {
+        margin: 0 0 25px;
+        font-size: clamp(17px, 2.8vw, 26px);
+        line-height: 1.3;
+      }
+
+      @keyframes hoverCharacter {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-6px);
+        }
+      }
+      @keyframes spinAttack {
+        0% {
+          transform: rotateY(0deg);
+        }
+        100% {
+          transform: rotateY(360deg);
+        }
+      }
+      @keyframes jumpAttack {
+        0%,
+        100% {
+          transform: translate(0, 0);
+        }
+        35% {
+          transform: translate(var(--jump-direction), -42px);
+        }
+        68% {
+          transform: translate(var(--jump-direction), -8px);
+        }
+      }
+      @keyframes growAttack {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        40% {
+          transform: scale(1.18);
+        }
+        72% {
+          transform: scale(1.05);
+        }
+      }
+      @keyframes projectileFly {
+        0% {
+          left: var(--projectile-start);
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(0.3) rotate(0deg);
+        }
+        12% {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(0.75) rotate(100deg);
+        }
+        78% {
+          left: var(--projectile-end);
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(1.15) rotate(420deg);
+        }
+        100% {
+          left: var(--projectile-end);
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(1.5) rotate(520deg);
+        }
+      }
+      @keyframes healthHit {
+        0%,
+        100% {
+          filter: brightness(1);
+        }
+        35% {
+          filter: brightness(2.2) saturate(1.5);
+        }
+      }
+      @keyframes hitFlash {
+        0%,
+        100% {
+          filter: drop-shadow(0 10px 9px rgba(0, 0, 0, 0.44));
+        }
+        18% {
+          filter: brightness(1.7) saturate(1.8) drop-shadow(0 0 3px #fff)
+            drop-shadow(0 0 10px #ff302b) drop-shadow(0 0 22px #e60000);
+        }
+        34% {
+          filter: brightness(0.9) saturate(2.4) drop-shadow(0 0 5px #ff8b83)
+            drop-shadow(0 0 16px #ff1717) drop-shadow(0 0 31px #bd0000);
+        }
+        50% {
+          filter: brightness(1.8) saturate(2) drop-shadow(0 0 3px #fff)
+            drop-shadow(0 0 12px #ff4d43) drop-shadow(0 0 25px #e00000);
+        }
+        68% {
+          filter: brightness(0.95) saturate(2.2) drop-shadow(0 0 4px #ffaaa3)
+            drop-shadow(0 0 14px #ff1c1c) drop-shadow(0 0 27px #b90000);
+        }
+        84% {
+          filter: brightness(1.5) saturate(1.8) drop-shadow(0 0 3px #fff)
+            drop-shadow(0 0 9px #ff302b) drop-shadow(0 0 19px #df0000);
+        }
+      }
+
+      @media (max-width: 500px) {
+        .game-screen {
+          padding: 6px;
+        }
+        .health-row {
+          gap: 7px;
+        }
+        .health-card {
+          width: 40%;
+        }
+        .health-label {
+          font-size: 8px;
+        }
+        .health-frame {
+          height: 25px;
+          padding: 3px;
+          border-width: 2px;
+          border-radius: 15px;
+        }
+        .health-fill {
+          border-radius: 10px;
+        }
+        .character-box {
+          width: 48vw;
+          max-width: 48%;
+        }
+        .character-box > img:first-child {
+          max-height: 27vh;
+        }
+        .question-area {
+          grid-template-rows: 28px 80px 78px 16px;
+          gap: 5px;
+        }
+        .progress {
+          padding: 4px 12px;
+          font-size: 12px;
+        }
+        .question-card {
+          height: 80px;
+          gap: 8px;
+          padding: 10px;
+          border-radius: 13px;
+        }
+        .question-number {
+          font-size: 28px;
+        }
+        .question-text {
+          font-size: 17px;
+        }
+        .answer-zone {
+          height: 78px;
+          gap: 5px;
+        }
+        .answer-input {
+          flex-basis: 100%;
+          height: 37px;
+          font-size: 18px;
+        }
+        .check-button {
+          width: 100%;
+          min-width: 0;
+          height: 37px;
+          font-size: 18px;
+        }
+        .choice-list {
+          height: 60px;
+          gap: 4px;
+        }
+        .choice-button {
+          height: 60px;
+          gap: 3px;
+          padding: 4px 3px;
+          font-size: 14px;
+        }
+        .choice-letter {
+          width: 25px;
+          height: 25px;
+          flex-basis: 25px;
+          font-size: 13px;
+        }
+        .feedback {
+          height: 16px;
+          font-size: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <section class="screen start-screen" id="startScreen">
+      <div class="start-box">
+        <h1 class="start-title">Have to</h1>
+        <button class="start-button" id="startButton">START</button>
+      </div>
+    </section>
+
+    <section class="screen game-screen" id="gameScreen">
+      <main class="game-layout" id="gameLayout">
+        <section class="battle-area">
+          <div class="health-row">
+            <div class="health-card">
+              <div class="health-label">
+                <span id="heroNameLabel">Hero</span
+                ><span id="heroHealthValue">100%</span>
+              </div>
+              <div class="health-frame">
+                <div class="health-fill hero-health-fill" id="heroHealth"></div>
+              </div>
+            </div>
+            <div class="health-card">
+              <div class="health-label">
+                <span id="enemyNameLabel">Antagonist</span
+                ><span id="enemyHealthValue">100%</span>
+              </div>
+              <div class="health-frame">
+                <div
+                  class="health-fill enemy-health-fill"
+                  id="enemyHealth"
+                ></div>
+              </div>
+            </div>
+          </div>
+          <div class="characters" id="characters">
+            <div class="character-box hero-character" id="heroCharacter">
+              <img
+                src="https://i.postimg.cc/Prg2cLRf/Xy-Icl9x1zlhoar-JZr-I-ezgif-com-webp-to-gif-converter.gif"
+                alt="Hero"
+              />
+            </div>
+            <div class="character-box enemy-character" id="enemyCharacter">
+              <img
+                src="https://i.postimg.cc/Nf3pVyzf/WOCEir-CJyco-Vz-DOi-Z2-ezgif-com-webp-to-gif-converter.gif"
+                alt="Antagonist"
+              />
+            </div>
+          </div>
+        </section>
+        <section class="question-area">
+          <div class="progress" id="progress">Question 1 / 15</div>
+          <div class="question-card">
+            <div class="question-number" id="questionNumber">1</div>
+            <p class="question-text" id="questionText"></p>
+          </div>
+          <div class="answer-zone" id="answerZone"></div>
+          <div class="feedback" id="feedback"></div>
+        </section>
+      </main>
+    </section>
+
+    <div class="game-over" id="gameOver">
+      <div class="result-box">
+        <h2 class="result-title" id="resultTitle"></h2>
+        <p class="result-text" id="resultText"></p>
+        <button class="restart-button" id="restartButton">PLAY AGAIN</button>
+      </div>
+    </div>
+
+    <script>
+      const CONFIG = {
+        layout: "center",
+        heroName: "Hero",
+        enemyName: "Antagonist",
+        damagePerAnswer: 7,
+        heroHealthColor: "#b990ca",
+        enemyHealthColor: "#ff8c00",
+        backgroundImage:
+          "https://i.postimg.cc/cJ93p2Lv/b1c0618de3943c2f786aac1d31c8a54f-a5017a53-6a43-4561-97ba-6.jpg",
+        heroImage:
+          "https://i.postimg.cc/Prg2cLRf/Xy-Icl9x1zlhoar-JZr-I-ezgif-com-webp-to-gif-converter.gif",
+        enemyImage:
+          "https://i.postimg.cc/Nf3pVyzf/WOCEir-CJyco-Vz-DOi-Z2-ezgif-com-webp-to-gif-converter.gif",
+        attacks: {
+          spin: "https://i.postimg.cc/BQn1ZMSK/0d4f186d-e361-4919-ac8e-8f7d360433bb.gif",
+          jump: "https://i.postimg.cc/dtVTQ4sT/1097c26e-fd15-467d-a719-f5610fa325c1.gif",
+          grow: "https://i.postimg.cc/Wb1JpXNq/a6d580c8-6612-4f88-a92e-5f44029f6518.gif",
+        },
+      };
+
+      const questions = [
+  {
+    type: "input",
+    question: "Sunflower ______ her room before the Halloween party. (tidy)",
+    answer: "has to tidy",
+  },
+  {
+    type: "input",
+    question: "The plants ______ the dishes after the party. (wash)",
+    answer: "have to wash",
+  },
+  {
+    type: "input",
+    question: "Peashooter ______ the windows today. (not / clean)",
+    answer: "doesn't have to clean",
+  },
+  {
+    type: "input",
+    question: "The zombies ______ the floor tonight. (not / sweep)",
+    answer: "don't have to sweep",
+  },
+  {
+    type: "input",
+    question: "______ Wallnut his bed before the Halloween party? (make)",
+    answer: "Does/have to make",
+  },
+  {
+    type: "input",
+    question: "______ the plants ______ the rubbish out after the party? (take)",
+    answer: "Do/have to take",
+  },
+  {
+    type: "input",
+    question: "______ Zomboss ______ the Halloween costumes? (wash)",
+    answer: "Does/have to wash",
+  },
+];
+
+      const $ = (id) => document.getElementById(id);
+      const startScreen = $("startScreen"),
+        gameScreen = $("gameScreen"),
+        gameLayout = $("gameLayout"),
+        characters = $("characters"),
+        gameOver = $("gameOver");
+      const startButton = $("startButton"),
+        restartButton = $("restartButton"),
+        questionNumber = $("questionNumber"),
+        questionText = $("questionText"),
+        progress = $("progress"),
+        answerZone = $("answerZone"),
+        feedback = $("feedback");
+      const heroHealth = $("heroHealth"),
+        enemyHealth = $("enemyHealth"),
+        heroHealthValue = $("heroHealthValue"),
+        enemyHealthValue = $("enemyHealthValue"),
+        heroCharacter = $("heroCharacter"),
+        enemyCharacter = $("enemyCharacter"),
+        resultTitle = $("resultTitle"),
+        resultText = $("resultText"),
+        heroNameLabel = $("heroNameLabel"),
+        enemyNameLabel = $("enemyNameLabel");
+      let currentQuestions = [],
+        currentQuestion = 0,
+        heroHp = 100,
+        enemyHp = 100,
+        correctAnswers = 0,
+        answeredQuestions = 0,
+        locked = false,
+        attackIndex = 0;
+      const attackSequence = [
+        "spin",
+        "grow",
+        "jump",
+        "grow",
+        "spin",
+        "jump",
+        "grow",
+        "jump",
+        "spin",
+        "grow",
+        "jump",
+        "spin",
+        "grow",
+        "jump",
+        "spin",
+      ];
+
+      document.documentElement.style.setProperty(
+        "--hero-health",
+        CONFIG.heroHealthColor,
+      );
+      document.documentElement.style.setProperty(
+        "--enemy-health",
+        CONFIG.enemyHealthColor,
+      );
+      document
+        .querySelectorAll(".screen")
+        .forEach(
+          (s) =>
+            (s.style.backgroundImage = `linear-gradient(rgba(12,18,23,.08),rgba(12,18,23,.08)),url("${CONFIG.backgroundImage}")`),
+        );
+      document.querySelector(".hero-character img").src = CONFIG.heroImage;
+      document.querySelector(".enemy-character img").src = CONFIG.enemyImage;
+      heroNameLabel.textContent = CONFIG.heroName;
+      enemyNameLabel.textContent = CONFIG.enemyName;
+      gameLayout.className = `game-layout layout-${["center", "top", "bottom"].includes(CONFIG.layout) ? CONFIG.layout : "center"}`;
+
+      function shuffleQuestions() {
+        currentQuestions = [...questions];
+        for (let i = currentQuestions.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [currentQuestions[i], currentQuestions[j]] = [
+            currentQuestions[j],
+            currentQuestions[i],
+          ];
+        }
+      }
+      function startGame() {
+        currentQuestion = 0;
+        heroHp = 100;
+        enemyHp = 100;
+        correctAnswers = 0;
+        answeredQuestions = 0;
+        attackIndex = 0;
+        locked = false;
+        shuffleQuestions();
+        gameOver.classList.remove("active");
+        startScreen.style.display = "none";
+        gameScreen.classList.add("active");
+        updateHealth();
+        renderQuestion();
+      }
+      function updateHealth() {
+        heroHealth.style.width = `${heroHp}%`;
+        enemyHealth.style.width = `${enemyHp}%`;
+        heroHealthValue.textContent = `${heroHp}%`;
+        enemyHealthValue.textContent = `${enemyHp}%`;
+      }
+      function normalizeAnswer(v) {
+        return String(v)
+          .normalize("NFC")
+          .trim()
+          .toLocaleLowerCase()
+          .replace(/\s+/gu, " ");
+      }
+      function isAnswerCorrect(value, q) {
+        const accepted = Array.isArray(q.answer) ? q.answer : [q.answer];
+        return accepted.some(
+          (a) => normalizeAnswer(value) === normalizeAnswer(a),
+        );
+      }
+      function renderQuestion() {
+        locked = false;
+        feedback.textContent = "";
+        feedback.className = "feedback";
+        const item = currentQuestions[currentQuestion];
+        questionNumber.textContent = currentQuestion + 1;
+        progress.textContent = `Question ${currentQuestion + 1} / ${currentQuestions.length}`;
+        questionText.textContent = item.question;
+        answerZone.innerHTML = "";
+        if (item.type === "input") {
+          const input = document.createElement("input");
+          input.className = "answer-input";
+          input.id = "answerInput";
+          input.type = "text";
+          input.autocomplete = "off";
+          input.autocapitalize = "off";
+          input.spellcheck = false;
+          input.placeholder = item.placeholder || "Type your answer";
+          const check = document.createElement("button");
+          check.className = "check-button";
+          check.textContent = "CHECK";
+          check.addEventListener("click", checkInputAnswer);
+          input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") checkInputAnswer();
+          });
+          answerZone.append(input, check);
+          setTimeout(() => input.focus(), 50);
+        } else {
+          const list = document.createElement("div");
+          list.className = "choice-list";
+          item.options.forEach((option, index) => {
+            const button = document.createElement("button");
+            button.className = "choice-button";
+            button.innerHTML = `<span class="choice-letter">${String.fromCharCode(65 + index)}</span><span>${option}</span>`;
+            button.addEventListener("click", () => {
+              if (locked) return;
+              const correct = index === item.answer;
+              button.classList.add(correct ? "correct-answer" : "wrong-answer");
+              submitAnswer(correct);
+            });
+            list.appendChild(button);
+          });
+          answerZone.appendChild(list);
+        }
+      }
+      function checkInputAnswer() {
+        if (locked) return;
+        const input = $("answerInput");
+        if (!input) return;
+        if (!input.value.trim()) return;
+        const correct = isAnswerCorrect(
+          input.value,
+          currentQuestions[currentQuestion],
+        );
+        input.classList.add(correct ? "correct-answer" : "wrong-answer");
+        submitAnswer(correct);
+      }
+      function submitAnswer(correct) {
+        if (locked) return;
+        locked = true;
+        answeredQuestions++;
+        if (correct) {
+          correctAnswers++;
+          enemyHp = Math.max(0, enemyHp - CONFIG.damagePerAnswer);
+          enemyHealth.classList.remove("health-hit");
+          void enemyHealth.offsetWidth;
+          enemyHealth.classList.add("health-hit");
+          feedback.textContent = "Correct";
+          feedback.className = "feedback good";
+          playAttack("hero");
+        } else {
+          heroHp = Math.max(0, heroHp - CONFIG.damagePerAnswer);
+          heroHealth.classList.remove("health-hit");
+          void heroHealth.offsetWidth;
+          heroHealth.classList.add("health-hit");
+          feedback.textContent = "Wrong";
+          feedback.className = "feedback bad";
+          playAttack("enemy");
+        }
+        updateHealth();
+        setTimeout(() => {
+          if (
+            heroHp <= 0 ||
+            enemyHp <= 0 ||
+            answeredQuestions >= currentQuestions.length
+          ) {
+            finishGame();
+            return;
+          }
+          currentQuestion++;
+          renderQuestion();
+        }, 1800);
+      }
+      function createProjectile(attacker, attack) {
+        const p = document.createElement("img");
+        p.className = "attack-projectile";
+        p.src = CONFIG.attacks[attack];
+        p.alt = "";
+        p.style.setProperty(
+          "--projectile-start",
+          attacker === "hero" ? "23%" : "77%",
+        );
+        p.style.setProperty(
+          "--projectile-end",
+          attacker === "hero" ? "77%" : "23%",
+        );
+        characters.appendChild(p);
+        requestAnimationFrame(() => p.classList.add("fly"));
+        setTimeout(() => p.remove(), 1600);
+      }
+      function flashHit(target) {
+        target.classList.remove("hit");
+        void target.offsetWidth;
+        target.classList.add("hit");
+        setTimeout(() => target.classList.remove("hit"), 1750);
+      }
+      function playAttack(attacker) {
+        const attack = attackSequence[attackIndex % attackSequence.length];
+        attackIndex++;
+        const character = attacker === "hero" ? heroCharacter : enemyCharacter;
+        const target = attacker === "hero" ? enemyCharacter : heroCharacter;
+        character.classList.remove("attack-spin", "attack-jump", "attack-grow");
+        void character.offsetWidth;
+        character.classList.add(`attack-${attack}`);
+        setTimeout(
+          () => createProjectile(attacker, attack),
+          attack === "spin" ? 570 : 260,
+        );
+        setTimeout(() => flashHit(target), attack === "spin" ? 1080 : 900);
+        setTimeout(() => character.classList.remove(`attack-${attack}`), 1500);
+      }
+      function finishGame() {
+        if (heroHp <= 0) {
+          resultTitle.textContent = "Game Over";
+          resultText.textContent = `${CONFIG.enemyName} won the battle.`;
+        } else if (enemyHp <= 0) {
+          resultTitle.textContent = "You Win!";
+          resultText.textContent = `${CONFIG.heroName} defeated the antagonist.`;
+        } else if (correctAnswers > currentQuestions.length / 2) {
+          resultTitle.textContent = "You Win!";
+          resultText.textContent = `${CONFIG.heroName} finished the quiz with the highest score.`;
+        } else if (correctAnswers < currentQuestions.length / 2) {
+          resultTitle.textContent = "Game Over";
+          resultText.textContent = `${CONFIG.enemyName} finished the quiz with the highest score.`;
+        } else {
+          resultTitle.textContent = "Draw!";
+          resultText.textContent = "Both sides finished with the same score.";
+        }
+        resultText.textContent += ` Correct answers: ${correctAnswers} / ${currentQuestions.length}.`;
+        gameOver.classList.add("active");
+      }
+      startButton.addEventListener("click", startGame);
+      restartButton.addEventListener("click", startGame);
+    </script>
+  </body>
+</html>
